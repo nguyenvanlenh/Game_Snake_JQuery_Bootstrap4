@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GAME SNAKE</title>
+    <script src="js/jquery-3.6.3.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <style>
+        .game {
+            margin-left: 171px;
+            position: relative;
+            width: 770px;
+
+        }
+
+        .cell {
+            height: 25px;
+        }
+
+        .gameover {
+            position: absolute;
+            top: 232px;
+            left: 260px;
+            visibility: hidden;
+            z-index: 1;
+        }
+        .welcom{
+            position: absolute;
+            top: 174px;
+            left: 176px;
+            z-index: 1;
+            font-weight: 900;
+            font-size: 140px;
+            color: #28a745;
+            font-style: oblique;
+        }
+
+        .nav {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-evenly;
+            align-items: center;
+
+        }
+
+        #new, #play {
+            padding: 15px 20px;
+            text-decoration: none;
+            font-size: large;
+            background: #28a745;
+            color: white;
+            border-radius: 10px;
+        }
+
+        #level {
+            width: 127px;
+            height: 60px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="game mt-3">
+        <h1 class="gameover">GAMER OVER</h1>
+        <h1 class="welcom">Snake</h1>
+    </div>
+    <div class="nav">
+
+        <a href="javascript:;" id="new">Chơi mới</a>
+        <div class="score">Điểm số: <strong></strong></div>
+        <select class="custom-select mr-sm-2" id="level">
+            <option selected>chọn level...</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+        </select>
+        <a href="javascript:;" id="play">Bắt đầu</a>
+    </div>
+</div>
+
+<script>
+
+
+    let snake;
+    let row = 20;
+    let col = 25;
+    let way = 0;
+    let isLeft = false
+    let isRight = false
+    let isUp = false;
+    let isDown = false
+    let x_food, y_food
+    let x_boom, y_boom
+    let isEat = true
+    let isPutBoom = false
+    let playing, drawing
+    let level
+    let score = 0
+    let x, y
+    $(document).ready(function () {
+
+
+
+        $('#play').click(function init() {
+            level = $('#level').val();
+            $('.welcom').hide(100)
+            initSnake(level)
+        })
+        for (let i = 0; i < row; i++) {
+            r = $('<div>').addClass('row');
+            for (let j = 0; j < col; j++) {
+                cell = $('<div>').addClass('cell col border cell' + '-' + i + '-' + j);
+                r.append(cell);
+            }
+            $('.game').append(r);
+        }
+        $('#new').click(function() {
+           location.reload();
+
+        });
+    })
+    function initSnake(level){
+        clearInterval(playing)
+        clearInterval(drawing)
+        if (level == 1) {
+            x = parseInt(Math.random() * 20);
+            y = parseInt(Math.random() * 25);
+            // rắn có chiều thẳng đứng theo cột
+            snake = [[x, y], [x + 1, y], [x + 2, y]];
+            playing = setInterval(run, 130);
+            drawing = setInterval(drawSnake, 130);
+        }
+        if (level == 2) {
+            x = parseInt(Math.random() * 10) + 5;
+            y = parseInt(Math.random() * 23) + 1;
+            snake = [[x, y], [x + 1, y], [x + 2, y]];
+            drawing = setInterval(drawSnake, 130);
+            playing = setInterval(run, 130);
+        }
+        if (level == 3) {
+            switch (parseInt(Math.random() * 2)) {
+                case 0 :
+                    // bắt đầu khoảng dòng 7 -> dòng 16 và từ cột 1 -> 11
+                    x = parseInt(Math.random() * 10) + 7;
+                    y = parseInt(Math.random() * 11) + 1;
+                    break;
+                case 1 :
+                    // bắt đầu khoảng dòng 7 -> dòng 16 và từ cột 13 -> 23
+                    x = parseInt(Math.random() * 10) + 7;
+                    y = parseInt(Math.random() * 11) + 13;
+                    break;
+
+            }
+            snake = [[x, y], [x + 1, y], [x + 2, y]];
+            drawing = setInterval(drawSnake, 130);
+            playing = setInterval(run, 130);
+        }
+        if (level == 4) {
+            switch (parseInt(Math.random() * 3)) {
+                case 0 :
+                    // bắt đầu khoảng dòng 7 -> dòng 16 và từ cột 1 -> 7
+                    x = parseInt(Math.random() * 10) + 7;
+                    y = parseInt(Math.random() * 7) + 1;
+                    break;
+                case 1 :
+                    // bắt đầu khoảng dòng 7 -> dòng 16 và từ cột 9 -> 15
+                    x = parseInt(Math.random() * 10) + 7;
+                    y = parseInt(Math.random() * 7) + 9;
+                    break;
+                case 2 :
+                    // bắt đầu khoảng dòng 7 -> dòng 16 và từ cột 17 -> 23
+                    x = parseInt(Math.random() * 10) + 7;
+                    y = parseInt(Math.random() * 7) + 17;
+                    break;
+
+            }
+            snake = [[x, y], [x + 1, y], [x + 2, y]];
+            drawing = setInterval(drawSnake, score >= 70 ? 110: 120);
+            playing = setInterval(run, score >= 70 ? 110: 120);
+        }
+        if (level == 5) {
+
+            // lấy 1 trong 4 vị trí bắt đầu
+            // để tránh không bắt đầu trên tường
+            // x : dọc, y : ngang
+            switch (parseInt(Math.random() * 4)) {
+                case 0 :
+                    // bắt đầu khoảng dòng 7 -> dòng 16 và từ cột 1 -> 5
+                    x = parseInt(Math.random() * 10) + 7;
+                    y = parseInt(Math.random() * 5) + 1;
+                    break;
+                case 1 :
+                    // bắt đầu khoảng dòng 7 -> dòng 16 và từ cột 7 -> 9
+                    x = parseInt(Math.random() * 10) + 7;
+                    y = parseInt(Math.random() * 3) + 7;
+                    break;
+                case 2 :
+                    // bắt đầu khoảng dòng 7 -> dòng 16 và từ cột 15 -> 17
+                    x = parseInt(Math.random() * 10) + 7;
+                    y = parseInt(Math.random() * 3) + 15;
+                    break;
+                case 3 :
+                    // bắt đầu khoảng dòng 7 -> dòng 16 và từ cột 19 -> 23
+                    x = parseInt(Math.random() * 10) + 7;
+                    y = parseInt(Math.random() * 5) + 19;
+                    break;
+            }
+
+            snake = [[x, y], [x + 1, y], [x + 2, y]];
+            drawing = setInterval(drawSnake, score >= 80 ? 120: 130);
+            playing = setInterval(run, score >= 80 ? 120: 130);
+        }
+    }
+
+    function draw(x, y) {
+        if (x === snake[0][0] && y === snake[0][1]) {
+            $('.cell' + '-' + x + '-' + y).addClass('bg-danger');
+        } else {
+            $('.cell' + '-' + x + '-' + y).addClass('bg-primary');
+        }
+    }
+
+    function drawSnake() {
+        for (let i = 0; i < row; i++) {
+            for (let j = 0; j < col; j++) {
+                $('.cell' + '-' + i + '-' + j).removeClass('bg-danger');
+                $('.cell' + '-' + i + '-' + j).removeClass('bg-primary');
+            }
+        }
+        for (let i = 0; i < snake.length; i++) {
+            draw(snake[i][0], snake[i][1]);
+        }
+    }
+
+    function run() {
+        // lấy cuối thêm đầu
+        switch (way) {
+            // len
+            case 0:
+                cell = snake.pop();
+                cell[0] = snake[0][0] - 1;
+                cell[1] = snake[0][1];
+                snake.unshift(cell);
+
+                break;
+            // xuong
+            case 1:
+                cell = snake.pop();
+                cell[0] = snake[0][0] + 1;
+                cell[1] = snake[0][1];
+                snake.unshift(cell);
+                break;
+            // phai
+            case 2:
+                cell = snake.pop();
+                cell[0] = snake[0][0];
+                cell[1] = snake[0][1] + 1;
+                snake.unshift(cell);
+                break;
+            //trai
+            case 3:
+                cell = snake.pop();
+                cell[0] = snake[0][0];
+                cell[1] = snake[0][1] - 1;
+                snake.unshift(cell);
+                break;
+        }
+
+        handleKeyDownEvent()
+        initFood()
+        initBoom()
+        checkEat(x_food, y_food)
+        $('.score').html(`Điểm : <strong>${score}</strong>`)
+        crossWall()
+        drawWall()
+        gameOver()
+        winGame()
+
+
+    }
+    function handleKeyDownEvent(){
+        // sử lí sự kiện nhấn phím
+        // như đang chạy qua trái thì không được qua phải và lên xuống cũng tương tự
+        onkeydown = function (key) {
+            let direc = key.keyCode
+            if ((direc == 37) && (!isRight)) {
+                way = 3
+                isLeft = true
+                isUp = false
+                isDown = false
+            }
+            if ((direc == 38) && (!isDown)) {
+                way = 0
+                isLeft = false
+                isRight = false
+                isUp = true
+            }
+            if ((direc == 39) && (!isLeft)) {
+                way = 2
+                isRight = true
+                isUp = false
+                isDown = false
+            }
+            if ((direc == 40) && (!isUp)) {
+                way = 1
+                isLeft = false
+                isRight = false
+                isDown = true
+            }
+        };
+    }
+
+    // cho rắn đi xuyên tường
+    function crossWall() {
+        // xuyên tường bên trên thì đầu sẽ xuất hiện bên dưới và ngược lại
+        if (cell[0] < 0) {
+            cell[0] = row
+        }
+        if (cell[0] > row) {
+            cell[0] = 0
+        }
+        //xuyên tường bên trái thì đầu sẽ xuất hiện bên phải và ngược lại
+        if (cell[1] < 0) {
+            cell[1] = col
+        }
+        if (cell[1] > col) {
+            cell[1] = 0
+        }
+    }
+
+    // j : hàng ngang
+    // i : hàng dọc
+    function drawWall() {
+        if (level == 2) {
+            for (let i = 0; i < row; i++) {
+                for (let j = 0; j < col; j++) {
+                    if ((j === 0 && i < 7) || (j === 0 && i > 12)) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if (i === 0) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if ((j === 24 && i < 7) || (j === 24 && i > 12)) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if (i === 19) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                }
+            }
+        }
+
+        if (level == 3) {
+            for (let i = 0; i < row; i++) {
+                for (let j = 0; j < col; j++) {
+                    if ((j === 0 && i < 7) || (j === 0 && i > 12)) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if (i === 0) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if ((j === 12 && i > 4 && i < 15)) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if ((j === 24 && i < 7) || (j === 24 && i > 12)) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if (i === 19) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                }
+            }
+        }
+        if (level == 4) {
+            for (let i = 0; i < row; i++) {
+                for (let j = 0; j < col; j++) {
+                    if (j === 0) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if (i === 0) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if ((j === 8 && i > 4 && i < 15) || (j === 16 && i > 4 && i < 15)) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if ((j === 24)) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if (i === 19) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                }
+            }
+        }
+        if (level == 5) {
+            for (let i = 0; i < row; i++) {
+                for (let j = 0; j < col; j++) {
+                    if ((j === 0 && i < 7) || (j === 0 && i > 12)) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if ((i === 0 && j < 10) || (i === 0 && j > 14)) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if ((i === 4 && j >= 10) && (i === 4 && j <= 14)) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if ((j === 6 && i > 5 && i < 14)) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if ((j === 12 && i > 6 && i < 13)) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if ((i === 15 && j >= 10 && j <= 14)) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if ((j === 18 && i > 5 && i < 14)) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if ((j === 24 && i < 7) || (j === 24 && i > 12)) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                    if ((i === 19 && j < 10) || (i === 19 && j > 14)) {
+                        $('.cell' + '-' + i + '-' + j).addClass('bg-success')
+                    }
+                }
+            }
+        }
+    }
+
+    function checkEat(x, y) {
+        // nếu vị trí đầu của con rắn trùng với vị trí của thức ăn thì xóa class thức ăn và tăng chiều dài
+        if (snake[0][0] === x && snake[0][1] === y) {
+            $('.cell' + '-' + x + '-' + y).removeClass('bg-warning');
+            isEat = true
+            // tăng kích thước và cộng điểm
+            grown()
+            score += 10
+            // ăn 1 cục thức ăn sẽ vẽ thêm boom ở lv 3 trở lên
+            isPutBoom = false
+        }
+    }
+
+
+    function initFood() {
+        if (isEat && level == 1) {
+            // vị trí thức ăn
+            x_food = parseInt(Math.random() * 20);
+            y_food = parseInt(Math.random() * 25);
+            drawFood(x_food, y_food)
+            // sau khi vẽ thức ăn thì cho thành false để không vẽ nữa ( 1 lần chỉ vẽ 1 cục thức ăn)
+            isEat = false
+        }
+        if (isEat && level == 2) {
+            x_food = parseInt(Math.random() * 18) + 1;
+            y_food = parseInt(Math.random() * 23) + 1;
+            drawFood(x_food, y_food)
+        }
+        if (isEat && level == 3) {
+            x_food = parseInt(Math.random() * 18) + 1;
+            y_food = parseInt(Math.random() * 23) + 1;
+            if (y_food == 12) {
+                y_food += 1
+            }
+            drawFood(x_food, y_food)
+        }
+        if (isEat && level == 4) {
+            x_food = parseInt(Math.random() * 18) + 1;
+            y_food = parseInt(Math.random() * 23) + 1;
+            drawFood(x_food, y_food)
+        }
+        if (isEat && level == 5) {
+            x_food = parseInt(Math.random() * 18) + 1;
+            y_food = parseInt(Math.random() * 23) + 1;
+            drawFood(x_food, y_food)
+        }
+    }
+
+    function drawFood(x, y) {
+
+        if (($('.cell' + '-' + x + '-' + y).addClass('bg-warning')).hasClass('bg-success')) {
+            $('.cell' + '-' + x + '-' + y).removeClass('bg-warning')
+            isEat = true
+        } else {
+            isEat = false
+        }
+    }
+
+
+    // level 3 trở lên mới đặt boom
+    function initBoom() {
+
+        if ((level == 3 && !isPutBoom)) {
+            // nếu điểm <= 30 thì đặt 1 lần 1 quả
+            if (score <= 30) {
+                x_boom = parseInt(Math.random() * 19) + 1;
+                y_boom = parseInt(Math.random() * 23) + 1;
+                drawBoom(x_boom, y_boom)
+            }
+            // ngược lại đặt 2 đến 3 quả
+            else {
+                for (let i = 0; i < 2; i++) {
+                    x_boom = parseInt(Math.random() * 19) + 1;
+                    y_boom = parseInt(Math.random() * 23) + 1;
+                    drawBoom(x_boom, y_boom)
+                }
+            }
+        }
+        // nếu điểm <= 40 thì đặt 1 lần 1 quả
+        if (level == 4 && !isPutBoom) {
+            if (score <= 40) {
+                x_boom = parseInt(Math.random() * 19) + 1;
+                y_boom = parseInt(Math.random() * 23) + 1;
+                drawBoom(x_boom, y_boom)
+            }
+            // ngược lại đặt 2 đến 3 quả
+            else {
+                for (let i = 0; i < 2; i++) {
+                    x_boom = parseInt(Math.random() * 19) + 1;
+                    y_boom = parseInt(Math.random() * 23) + 1;
+                    drawBoom(x_boom, y_boom)
+                }
+            }
+        }
+        if (level == 5 && !isPutBoom) {
+            x_boom = parseInt(Math.random() * 19) + 1;
+            y_boom = parseInt(Math.random() * 23) + 1;
+            drawBoom(x_boom, y_boom)
+        }
+    }
+
+    function drawBoom(x, y) {
+        // nếu lớp này chung với lớp lường hoặc cùng cột với con rắn thì hủy vẽ lại
+        if (($('.cell' + '-' + x + '-' + y).addClass('bg-secondary')).hasClass('bg-success')
+            || snake[0][1] == y) {
+            $('.cell' + '-' + x + '-' + y).removeClass('bg-secondary')
+            isPutBoom = false
+        } else {
+            isPutBoom = true
+        }
+
+    }
+
+    function grown() {
+        // lấy vị trí sau trừ trước dể biết rắn đang nằm ngang hay dọc
+        // nếu x = 0 thì rắn đang nằm ngang , y = 0 thì rắn đang nằm dọc
+        // cộng vào cuối chuỗi của con rắn
+        let x = snake[snake.length - 1][0] - snake[snake.length - 2][0]
+        let y = snake[snake.length - 1][1] - snake[snake.length - 2][1]
+        snake.push([x + snake[snake.length - 1][0], y + snake[snake.length - 1][1]])
+    }
+
+    function gameOver() {
+        // nếu đầu con rắn trùng tên class với tường hoặc boom thì game kết thúc
+        if ($('.cell' + '-' + snake[0][0] + '-' + snake[0][1]).hasClass('bg-success')
+            || $('.cell' + '-' + snake[0][0] + '-' + snake[0][1]).hasClass('bg-secondary')
+            || $('.cell' + '-' + snake[0][0] + '-' + snake[0][1]).hasClass('bg-primary')
+        ) {
+            // xóa hàm vẽ và hàm chơi
+            clearInterval(drawing)
+            clearInterval(playing);
+            // ẩn hết row để hiện lên chữ Game Over
+            $('.row').css({
+                'opacity': '0.5'
+            });
+            $('.gameover').css({
+                'visibility': 'visible'
+            });
+            // ẩn thanh chọn level . khi người chơi chọn chơi mới thanh này mới hiện lên
+            $('#level').css({
+                'visibility': 'hidden'
+            })
+        }
+    }
+
+    function winGame() {
+
+        let victoryScore
+        if (level == 1 || level == 2) {
+            victoryScore = 150
+        }
+        if (level == 3) {
+            victoryScore = 100
+        }
+        if (level == 4) {
+            victoryScore = 100
+        }
+        if (level == 5) {
+            victoryScore = 100
+        }
+        if (score == victoryScore) {
+            clearInterval(drawing)
+            clearInterval(playing);
+            $('.row').css({
+                'opacity': '0.5'
+            });
+            $('.gameover').html(`Win Game`).css({
+                'color': '#28a745'
+            })
+            $('.gameover').css({
+                'visibility': 'visible',
+            });
+
+            $('#level').css({
+                'visibility': 'hidden'
+            })
+        }
+    }
+</script>
+</body>
+</html>
